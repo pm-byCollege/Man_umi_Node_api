@@ -11,7 +11,7 @@ const taskRouter = require('./tasks'); // 引入task路由模块
 const { jwtAuth, decode } = require('../utils/user-jwt'); // 引入jwt认证函数
 const router = express.Router(); // 注册路由 
 
-router.use(jwtAuth); // 注入认证模块
+// router.use(jwtAuth); // 注入认证模块
 
 router.use('/api', userRouter); // 注入用户路由模块
 router.use('/api', taskRouter); // 注入任务路由模块

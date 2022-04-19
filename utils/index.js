@@ -25,6 +25,7 @@ function querySql(sql) {
   return new Promise((resolve, reject) => {
     try {
       conn.query(sql, (err, res) => {
+        console.log("22",res)
         if (err) {
           reject(err);
         } else {
@@ -44,7 +45,7 @@ function querySql(sql) {
 function queryOne(sql) {
   return new Promise((resolve, reject) => {
     querySql(sql).then(res => {
-      console.log('res===',res)
+      // console.log('res===',res)
       if (res && res.length > 0) {
         resolve(res[0]);
       } else {
