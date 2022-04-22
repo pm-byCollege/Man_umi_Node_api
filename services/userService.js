@@ -71,7 +71,8 @@ function login(req, res, next) {
         	msg: '200', 
         	data: { 
             token,
-            phone: user[0].phone
+            phone: user[0].phone,
+            type: user[0].type
             // userData
           } 
         })
@@ -105,12 +106,14 @@ function info(req, res, next) {
           })
         } else {
           // 登录成功
+          console.log(user);
           let userData = {
-            name: user.name,
-            email: user.email,
-            phone,
-            createTime: user.createTime,
-            sex: user.sex ? '女' : '男',
+            type: user[0].type,
+            name: user[0].name,
+            email: user[0].email,
+            phone: user[0].phone,
+            createTime: user[0].createTime,
+            sex: user[0].sex ? '女' : '男',
           }
           res.json({ 
             code: CODE_SUCCESS, 

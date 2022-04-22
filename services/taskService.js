@@ -41,7 +41,7 @@ function queryTaskList(req, res, next) {
         res.json({ 
         	code: CODE_ERROR, 
         	msg: '暂无数据', 
-        	data: null 
+        	data: [] 
         })
       } else {
 
@@ -116,6 +116,206 @@ function queryTaskList(req, res, next) {
     })
   }
 }
+
+// 查询单位列表
+function queryFirmList(req, res, next) {
+  const err = validationResult(req);
+  // 如果验证错误，empty不为空
+  if (!err.isEmpty()) {
+    // 获取错误信息
+    const [{ msg }] = err.errors;
+    // 抛出错误，交给我们自定义的统一异常处理程序进行错误返回 
+    next(boom.badRequest(msg));
+  } else {
+    let { pageSize, page, name, region, classify } = req.body;
+    let query = `select * from firm_info`;
+    querySql(query)
+    .then(data => {
+    	console.log('所有单位===', data);
+      if (!data || data.length === 0) {
+        res.json({ 
+        	code: CODE_ERROR, 
+        	msg: '暂无数据', 
+        	data: null 
+        })
+      } else {
+        // 计算数据总条数
+        let total = data.length; 
+        // 分页条件 (跳过多少条)
+        let pageS = page - 1;
+        let n = page * pageSize;
+        // 拼接分页的sql语句命令
+        if (region || name || classify) {
+            let query_4;
+            let arr = [];
+            if(region) arr[arr.length] = `region='${region}'`         
+            if(name) arr[arr.length] = `name like '%${name}%'`          
+            if(classify) arr[arr.length] = `classify='${classify}'`          
+            if(arr.length>1) query_4=arr.join(' and ')
+            else query_4 = arr[0]
+          let query_1 = `select * from firm_info where ${query_4}`;
+          querySql(query_1)
+          .then(result_1 => {
+            if (!result_1 || result_1.length === 0) {
+              res.json({ 
+                code: CODE_SUCCESS, 
+                msg: '暂无数据', 
+                data: [] 
+              })
+            } else {
+              let query_2 = query_1 + ` limit ${pageS} , ${n}`;
+              querySql(query_2)
+              .then(result_2 => {
+                if (!result_2 || result_2.length === 0) {
+                  res.json({ 
+                    code: CODE_SUCCESS, 
+                    msg: '暂无数据', 
+                    data: [] 
+                  })
+                } else {
+                  res.json({ 
+                    code: CODE_SUCCESS, 
+                    msg: '查询数据成功', 
+                    data:result_2,
+                    total: result_1.length,
+                    page: page,
+                    pageSize: pageSize,
+                  })
+                }
+              })
+            }
+          })
+        } else {
+          let query_3 = query + ` limit ${pageS} , ${n}`;
+          querySql(query_3)
+          .then(result_3 => {
+            if (!result_3 || result_3.length === 0) {
+              res.json({ 
+                code: CODE_SUCCESS, 
+                msg: '暂无数据', 
+                data: [] 
+              })
+            } else {
+              res.json({ 
+                code: CODE_SUCCESS, 
+                msg: '查询数据成功', 
+                data: result_3,
+                total: result_3.length,
+                page: page,
+                pageSize: pageSize,
+              })
+            }
+          })
+        }
+      }
+    })
+  }
+}
+
+function findFirm(param, type) {
+    let query = null;
+    if (type == 1) { // 1:添加类型 2:编辑或删除类型
+      query = `select * from firm_info where name='${param}'`;
+    }
+    return queryOne(query);
+}
+
+// 添加企业
+function addFirm(req, res, next) {
+  const err = validationResult(req);
+  if (!err.isEmpty()) {
+    const [{ msg }] = err.errors;
+    next(boom.badRequest(msg));
+  } else {
+    let { name, classify, endTime, post, region } = req.body;
+    console.log(post);
+    let posts = post.map((item) => {
+      return item.postName
+    }).join(',')
+    findFirm(name, 1)
+    .then(task => {
+      if (task) {
+        res.json({ 
+          code: CODE_ERROR, 
+          msg: '企业名称不能重复', 
+          data: null
+        })
+      } else {
+        const query = `insert into firm_info(name, classify, endTime, post, region) values('${name}', '${classify}', '${endTime}', '${posts}', '${region}')`;
+        querySql(query)
+        .then(data => {
+          // console.log('添加任务===', data);
+          if (!data || data.length === 0) {
+            res.json({ 
+              code: CODE_ERROR, 
+              msg: '添加企业失败', 
+              data: null 
+            })
+          } else {
+            res.json({ 
+              code: CODE_SUCCESS, 
+              msg: '添加数据成功', 
+              data: null 
+            })
+          }
+        })
+      }
+    })
+
+  }
+}
+
+function queryPostList(req, res, next) {
+  const err = validationResult(req);
+  if (!err.isEmpty()) {
+    const [{ msg }] = err.errors;
+    next(boom.badRequest(msg));
+  } else {
+    let {  postName } = req.body;
+    let query = `select * from postList`;
+    querySql(query)
+    .then((data) => {
+      console.log('所有岗位', data);
+      let total = data.length
+      if (!data || data.length === 0) {
+        res.json({ 
+        	code: CODE_ERROR, 
+        	msg: '暂无数据', 
+        	data: [] 
+        })
+      } else {
+        if (postName){
+          let query_1 = query + ` where postName like '%${postName}%'`
+          querySql(query_1)
+          .then((data1) => {
+            if (!data1 || data1.length === 0) {
+              res.json({ 
+                code: CODE_ERROR, 
+                msg: '暂无数据', 
+                data: [] 
+              })
+            } else {
+              res.json({ 
+                code: 200, 
+                msg: '查询成功', 
+                data: data1,
+                total: total
+              })
+            }
+          })
+        } else {
+          res.json({ 
+            code: 200, 
+            msg: '查询成功', 
+            data: data,
+            total: total,
+          })
+        }
+      }
+    })
+  }
+}
+
 
 // 添加任务
 function addTask(req, res, next) {
@@ -347,7 +547,10 @@ function findTask(param, type) {
 
 
 module.exports = {
+  queryFirmList,
+  addFirm,
   queryTaskList,
+  queryPostList,
   addTask,
   editTask,
   updateTaskStatus,

@@ -7,10 +7,17 @@
 const express = require('express');
 const router = express.Router();
 const service = require('../services/taskService');
+const { route } = require('./users');
 
 
 // 任务清单接口
 router.get('/queryTaskList', service.queryTaskList);
+
+router.post('/queryFirmList', service.queryFirmList);
+router.post('/addFirm', service.addFirm);
+
+
+router.post('/queryPostList', service.queryPostList)
 
 // 添加任务接口
 router.post('/addTask', service.addTask);
