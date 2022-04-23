@@ -15,7 +15,10 @@ router.get('/queryTaskList', service.queryTaskList);
 
 router.post('/queryFirmList', service.queryFirmList);
 router.post('/addFirm', service.addFirm);
-
+router.post('/editFirm', service.editFirm);
+router.post('/deleteFirm', service.deleteFirm);
+router.post('/getFirmInfo', service.getFirmInfo);
+router.post('/getDeliveryInfo', service.getDeliveryInfo);
 
 router.post('/queryPostList', service.queryPostList)
 

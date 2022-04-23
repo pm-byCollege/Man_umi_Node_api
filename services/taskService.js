@@ -200,7 +200,7 @@ function queryFirmList(req, res, next) {
                 code: CODE_SUCCESS, 
                 msg: '查询数据成功', 
                 data: result_3,
-                total: result_3.length,
+                total: total,
                 page: page,
                 pageSize: pageSize,
               })
@@ -212,11 +212,75 @@ function queryFirmList(req, res, next) {
   }
 }
 
-function findFirm(param, type) {
+// 查询企业详情
+function getFirmInfo(req, res, next) {
+  const err = validationResult(req);
+  // 如果验证错误，empty不为空
+  if (!err.isEmpty()) {
+    // 获取错误信息
+    const [{ msg }] = err.errors;
+    // 抛出错误，交给我们自定义的统一异常处理程序进行错误返回 
+    next(boom.badRequest(msg));
+  } else {
+    let { id } = req.body;
+    let query = `select * from firm_info where id=${id}`;
+    querySql(query)
+    .then(data => {
+    	console.log('详情===', data);
+      if (!data || data.length === 0) {
+        res.json({ 
+        	code: CODE_ERROR, 
+        	msg: '暂无数据', 
+        	data: null 
+        })
+      } else {
+        res.json({ 
+          code: CODE_SUCCESS, 
+          msg: '查询数据成功', 
+          data
+        })    
+      }
+    })
+  }
+}
+
+// 查询投递情况
+function getDeliveryInfo(req, res, next) {
+  const err = validationResult(req);
+  // 如果验证错误，empty不为空
+  if (!err.isEmpty()) {
+    // 获取错误信息
+    const [{ msg }] = err.errors;
+    // 抛出错误，交给我们自定义的统一异常处理程序进行错误返回 
+    next(boom.badRequest(msg));
+  } else {
+    let { firmId } = req.body;
+    let query = `select * from delivery_info where firmId=${firmId}`;
+    querySql(query)
+    .then(data => {
+    	console.log('===', data);
+      if (!data || data.length === 0) {
+        res.json({ 
+        	code: CODE_ERROR, 
+        	msg: '暂无数据', 
+        	data: []
+        })
+      } else {
+        res.json({ 
+          code: CODE_SUCCESS, 
+          msg: '查询数据成功', 
+          data
+        })    
+      }
+    })
+  }
+}
+
+function findFirm(param) {
     let query = null;
-    if (type == 1) { // 1:添加类型 2:编辑或删除类型
       query = `select * from firm_info where name='${param}'`;
-    }
+
+      
     return queryOne(query);
 }
 
@@ -232,7 +296,10 @@ function addFirm(req, res, next) {
     let posts = post.map((item) => {
       return item.postName
     }).join(',')
-    findFirm(name, 1)
+    let postIds = post.map((item) => {
+      return item.id
+    }).join(',')
+    findFirm(name)
     .then(task => {
       if (task) {
         res.json({ 
@@ -241,7 +308,7 @@ function addFirm(req, res, next) {
           data: null
         })
       } else {
-        const query = `insert into firm_info(name, classify, endTime, post, region) values('${name}', '${classify}', '${endTime}', '${posts}', '${region}')`;
+        const query = `insert into firm_info(name, classify, endTime, post, region, postId) values('${name}', '${classify}', '${endTime}', '${posts}', '${region}', '${postIds}')`;
         querySql(query)
         .then(data => {
           // console.log('添加任务===', data);
@@ -262,6 +329,95 @@ function addFirm(req, res, next) {
       }
     })
 
+  }
+}
+
+// 删除企业
+function deleteFirm(req, res, next) {
+  const err = validationResult(req);
+  if (!err.isEmpty()) {
+    const [{ msg }] = err.errors;
+    next(boom.badRequest(msg));
+  } else {
+    let { id, type } = req.body;
+        if (type === 3) {
+          res.json({ 
+            code: CODE_ERROR, 
+            msg: '删除数据失败，目前无权限', 
+            data: null 
+          })
+        } else {
+          const query = `delete from firm_info where id='${id}'`;
+          querySql(query)
+          .then(data => {
+            if (!data || data.length === 0) {
+              res.json({ 
+                code: CODE_ERROR, 
+                msg: '删除数据失败', 
+                data: null 
+              })
+            } else {
+              res.json({ 
+                code: CODE_SUCCESS, 
+                msg: '删除数据成功', 
+                data: null 
+              })
+            }
+          })
+        }
+  }
+}
+
+// 修改企业
+function editFirm(req, res, next) {
+  const err = validationResult(req);
+  if (!err.isEmpty()) {
+    const [{ msg }] = err.errors;
+    next(boom.badRequest(msg));
+  } else {
+    let { id, name, region, endTime, classify, post, type } = req.body;
+    if (type === 3) {
+      res.json({ 
+        code: CODE_ERROR, 
+        msg: '删除数据失败，目前无权限', 
+        data: null 
+      })
+    } else {
+      let posts = post.map((item) => {
+        return item.postName
+      }).join(',')
+      let postIds = post.map((item) => {
+        return item.id
+      }).join(',')
+         findFirm(name)
+          .then(result => {
+            if (result && result.id !== id) {
+              res.json({ 
+                code: CODE_ERROR, 
+                msg: '企业名称不能重复', 
+                data: null 
+              })
+            } else {
+              const query = `update firm_info set name='${name}', region='${region}', classify='${classify}', post='${posts}', postId='${postIds}', endTime='${endTime}' where id='${id}'`;
+              querySql(query)
+              .then(data => {
+                if (!data || data.length === 0) {
+                  res.json({ 
+                    code: CODE_ERROR, 
+                    msg: '更新企业失败', 
+                    data: null 
+                  })
+                } else {
+                  res.json({ 
+                    code: CODE_SUCCESS, 
+                    msg: '更新企业成功', 
+                    data: null 
+                  })
+                }
+              })
+            }
+          })
+    }
   }
 }
 
@@ -549,6 +705,10 @@ function findTask(param, type) {
 module.exports = {
   queryFirmList,
   addFirm,
+  editFirm,
+  deleteFirm,
+  getFirmInfo,
+  getDeliveryInfo,
   queryTaskList,
   queryPostList,
   addTask,
