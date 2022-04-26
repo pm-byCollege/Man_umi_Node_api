@@ -15,7 +15,9 @@ const {
   JWT_EXPIRED 
 } = require('../utils/constant');
 const { decode } = require('../utils/user-jwt');
-
+// const multer = require('multer');
+const formidable = require('formidable');
+const path = require('path');
 
 // 查询任务列表
 function queryTaskList(req, res, next) {
@@ -266,6 +268,7 @@ function getDeliveryInfo(req, res, next) {
         	data: []
         })
       } else {
+        
         res.json({ 
           code: CODE_SUCCESS, 
           msg: '查询数据成功', 
@@ -470,6 +473,42 @@ function queryPostList(req, res, next) {
       }
     })
   }
+}
+
+// 添加简历
+function upload(req, res, next) {
+    const form = new formidable.IncomingForm();
+    const { stu_id, firmId, postId } = req.query
+    form.uploadDir = path.join(__dirname, '../upload');
+    form.parse(req, function(err, fileds, files){
+      if(err) next(err);
+      const url = files.file.filepath
+      var url1 = ''
+      for (let i = 0; i < url.length; i++) {
+        if (url[i] === '\\'){
+          url1 += '\\\\'
+        } else {
+          url1 += url[i]
+        }
+      }
+      const query = `update delivery_info set filepath='${url1}' where stu_id='${Number(stu_id)}' and postId='${postId}' and firmId='${firmId}'`;
+      querySql(query)
+      .then(data => {
+        if (!data || data.length === 0) {
+          res.json({ 
+            code: CODE_ERROR, 
+            msg: '添加数据失败', 
+            data: null 
+          })
+        } else {
+          res.send({
+            status: 200,
+            data: null,
+            msg: '上传成功'
+          })
+        }
+      })
+    })
 }
 
 
@@ -706,6 +745,7 @@ module.exports = {
   queryFirmList,
   addFirm,
   editFirm,
+  upload,
   deleteFirm,
   getFirmInfo,
   getDeliveryInfo,

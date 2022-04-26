@@ -83,7 +83,6 @@ function login(req, res, next) {
 
 // 用户信息
 function info(req, res, next) {
-
     const err = validationResult(req);
     // 如果验证错误，empty不为空
     if (!err.isEmpty()) {
@@ -92,6 +91,7 @@ function info(req, res, next) {
       // 抛出错误，交给我们自定义的统一异常处理程序进行错误返回 
       next(boom.badRequest(msg));
     } else {
+      
       let { phone } = req.body;
       console.log(phone);
       const query = `select * from user_info where phone='${phone}'`;
@@ -107,21 +107,45 @@ function info(req, res, next) {
         } else {
           // 登录成功
           console.log(user);
-          let userData = {
-            type: user[0].type,
-            name: user[0].name,
-            email: user[0].email,
-            phone: user[0].phone,
-            createTime: user[0].createTime,
-            sex: user[0].sex ? '女' : '男',
+          let userData = {} ;
+          if (user[0].type === 3){
+            const query1 = `select student_id from student_info where username='${user[0].username}' `
+            querySql(query1)
+            .then(data => {
+              userData = {
+                stu_id: data[0].student_id,
+                type: user[0].type,
+                name: user[0].name,
+                email: user[0].email,
+                phone: user[0].phone,
+                createTime: user[0].createTime,
+                sex: user[0].sex ? '女' : '男',
+              }
+              res.json({ 
+                code: CODE_SUCCESS, 
+                msg: '200', 
+                data: { 
+                  userData
+                } 
+              })
+            })
+          } else {
+            userData = {
+              type: user[0].type,
+              name: user[0].name,
+              email: user[0].email,
+              phone: user[0].phone,
+              createTime: user[0].createTime,
+              sex: user[0].sex ? '女' : '男',
+            }
+            res.json({ 
+              code: CODE_SUCCESS, 
+              msg: '200', 
+              data: { 
+                userData
+              } 
+            })
           }
-          res.json({ 
-            code: CODE_SUCCESS, 
-            msg: '200', 
-            data: { 
-              userData
-            } 
-          })
         }
       })
     }

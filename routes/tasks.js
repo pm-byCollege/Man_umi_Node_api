@@ -19,6 +19,7 @@ router.post('/editFirm', service.editFirm);
 router.post('/deleteFirm', service.deleteFirm);
 router.post('/getFirmInfo', service.getFirmInfo);
 router.post('/getDeliveryInfo', service.getDeliveryInfo);
+router.post('/upload', service.upload);
 
 router.post('/queryPostList', service.queryPostList)
 

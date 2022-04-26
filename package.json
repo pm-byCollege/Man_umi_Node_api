@@ -11,9 +11,12 @@
     "express": "^4.17.1",
     "express-jwt": "^5.3.3",
     "express-validator": "^6.5.0",
+    "formidable": "^2.0.1",
     "jsonwebtoken": "^8.5.1",
+    "multer": "^1.4.4",
     "mysql": "^2.18.1",
-    "nodemailer": "^6.7.2"
+    "nodemailer": "^6.7.2",
+    "path": "^0.12.7"
   },
   "devDependencies": {
     "crypto": "^1.0.1",
