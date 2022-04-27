@@ -7,6 +7,7 @@
 const { querySql, queryOne } = require('../utils/index');
 const jwt = require('jsonwebtoken');
 const boom = require('boom');
+const fs = require('fs')
 const { validationResult } = require('express-validator');
 const { 
   CODE_ERROR,
@@ -272,7 +273,8 @@ function getDeliveryInfo(req, res, next) {
         res.json({ 
           code: CODE_SUCCESS, 
           msg: '查询数据成功', 
-          data
+          data,
+          path: JSON.stringify(data.filepath)
         })    
       }
     })
@@ -482,16 +484,18 @@ function upload(req, res, next) {
     form.uploadDir = path.join(__dirname, '../upload');
     form.parse(req, function(err, fileds, files){
       if(err) next(err);
-      const url = files.file.filepath
-      var url1 = ''
-      for (let i = 0; i < url.length; i++) {
-        if (url[i] === '\\'){
-          url1 += '\\\\'
-        } else {
-          url1 += url[i]
-        }
-      }
-      const query = `update delivery_info set filepath='${url1}' where stu_id='${Number(stu_id)}' and postId='${postId}' and firmId='${firmId}'`;
+      console.log(files);
+      const url = files.file.newFilename
+      // var url1 = ''
+      // for (let i = 0; i < url.length; i++) {
+      //   if (url[i] === '\\'){
+      //     url1 += '\\\\'
+      //   } else {
+      //     url1 += url[i]
+      //   }
+      // }
+      
+      const query = `update delivery_info set filepath='${url}' where stu_id='${Number(stu_id)}' and postId='${postId}' and firmId='${firmId}'`;
       querySql(query)
       .then(data => {
         if (!data || data.length === 0) {
@@ -511,6 +515,13 @@ function upload(req, res, next) {
     })
 }
 
+
+function down(req, res, next) {
+  const { name } = req.query
+  const url = path.join(__dirname, '../upload')
+  const fileName = url + `\\${name}`
+  res.sendFile(fileName)
+}
 
 // 添加任务
 function addTask(req, res, next) {
@@ -746,6 +757,7 @@ module.exports = {
   addFirm,
   editFirm,
   upload,
+  down,
   deleteFirm,
   getFirmInfo,
   getDeliveryInfo,
