@@ -151,6 +151,140 @@ function info(req, res, next) {
     }
 }
 
+function stuInfo(req, res, next) {
+  const err = validationResult(req);
+  // 如果验证错误，empty不为空
+  if (!err.isEmpty()) {
+    // 获取错误信息
+    const [{ msg }] = err.errors;
+    // 抛出错误，交给我们自定义的统一异常处理程序进行错误返回 
+    next(boom.badRequest(msg));
+  } else {
+    let { pageSize, page, student_id } = req.body;
+    let query = `select * from student_info`;
+    querySql(query)
+    .then(data => {
+    	console.log('所有学生===', data);
+      if (!data || data.length === 0) {
+        res.json({ 
+        	code: CODE_ERROR, 
+        	msg: '暂无数据', 
+        	data: null 
+        })
+      } else {
+        // 计算数据总条数
+        let total = data.length; 
+        // 分页条件 (跳过多少条)
+        let pageS = page - 1;
+        let n = page * pageSize;
+        // 拼接分页的sql语句命令
+        if (student_id) {
+          let query_1 = `select * from student_info where student_id='${student_id}'`;
+          querySql(query_1)
+          .then(result_1 => {
+            if (!result_1 || result_1.length === 0) {
+              res.json({ 
+                code: CODE_SUCCESS, 
+                msg: '暂无数据', 
+                data: [] 
+              })
+            } else {
+              let query_2 = query_1 + ` limit ${pageS} , ${n}`;
+              querySql(query_2)
+              .then(result_2 => {
+                if (!result_2 || result_2.length === 0) {
+                  res.json({ 
+                    code: CODE_SUCCESS, 
+                    msg: '暂无数据', 
+                    data: [] 
+                  })
+                } else {
+                  res.json({ 
+                    code: CODE_SUCCESS, 
+                    msg: '查询数据成功', 
+                    data:result_2,
+                    total: result_1.length,
+                    page: page,
+                    pageSize: pageSize,
+                  })
+                }
+              })
+            }
+          })
+        } else {
+          let query_3 = query + ` limit ${pageS} , ${n}`;
+          querySql(query_3)
+          .then(result_3 => {
+            if (!result_3 || result_3.length === 0) {
+              res.json({ 
+                code: CODE_SUCCESS, 
+                msg: '暂无数据', 
+                data: [] 
+              })
+            } else {
+              res.json({ 
+                code: CODE_SUCCESS, 
+                msg: '查询数据成功', 
+                data: result_3,
+                total: total,
+                page: page,
+                pageSize: pageSize,
+              })
+            }
+          })
+        }
+      }
+    })
+  }
+}
+
+function deleteStu(req, res, next) {
+  const err = validationResult(req);
+  if (!err.isEmpty()) {
+    const [{ msg }] = err.errors;
+    next(boom.badRequest(msg));
+  } else {
+    let { student_id, phone, type } = req.body;
+        if (type === 3) {
+          res.json({ 
+            code: CODE_ERROR, 
+            msg: '删除数据失败，目前无权限', 
+            data: null 
+          })
+        } else {
+          const query = `delete from student_info where student_id='${student_id}'`;
+          querySql(query)
+          .then(data => {
+            if (!data || data.length === 0) {
+              res.json({ 
+                code: CODE_ERROR, 
+                msg: '删除数据失败', 
+                data: null 
+              })
+            } else {
+              const query2 = `delete from user_info where phone='${phone}'`;
+              querySql(query2)
+              .then(data1 => {
+                if (!data1 || data1.length === 0) {
+                  res.json({ 
+                    code: CODE_ERROR, 
+                    msg: '删除数据失败', 
+                    data: null 
+                  })
+                } else {
+                  res.json({ 
+                    code: CODE_SUCCESS, 
+                    msg: '删除数据成功', 
+                    data: null 
+                  })
+                }
+              })
+            }
+          })
+        }
+  }
+}
+
 // 注册
 function register(req, res, next) {
   const err = validationResult(req);
@@ -158,19 +292,25 @@ function register(req, res, next) {
     const [{ msg }] = err.errors;
     next(boom.badRequest(msg));
   } else {
-    let { username, password } = req.body;
-    findUser(username)
+    let { username, password, phone, email, stu_id, name } = req.body;
+    stu_id = Number(stu_id)
+    let type = 3
+    findUser(username, phone, email,)
   	.then(data => {
-  		// console.log('用户注册===', data);
+  		console.log('用户注册===', data);
   		if (data) {
+        let errMsg = '';
+        if (phone === data.phone) errMsg = '电话已存在'
+        if (email === data.email) errMsg = '邮箱已存在'
+        if (username === data.username) errMsg = '用户名已存在'
   			res.json({ 
 	      	code: CODE_ERROR, 
-	      	msg: '用户已存在', 
+	      	msg: errMsg,
 	      	data: null 
 	      })
   		} else {
-	    	password = md5(password);
-  			const query = `insert into user_info(username, password) values('${username}', '${password}')`;
+	    	// password = md5(password);
+  			const query = `insert into user_info(username, password, name, email, phone, type) values('${username}', '${password}', '${name}', '${email}', '${phone}', '${type}')`;
   			querySql(query)
 		    .then(result => {
 		    	// console.log('用户注册===', result);
@@ -181,39 +321,21 @@ function register(req, res, next) {
 		        	data: null 
 		        })
 		      } else {
-            const queryUser = `select * from sys_user where username='${username}' and password='${password}'`;
-            querySql(queryUser)
-            .then(user => {
-              const token = jwt.sign(
-                { username },
-                PRIVATE_KEY,
-                { expiresIn: JWT_EXPIRED }
-              )
-
-              let userData = {
-                id: user[0].id,
-                username: user[0].username,
-                nickname: user[0].nickname,
-                avator: user[0].avator,
-                sex: user[0].sex,
-                gmt_create: user[0].gmt_create,
-                gmt_modify: user[0].gmt_modify
-              };
-
-              res.json({ 
-                code: CODE_SUCCESS, 
-                msg: '注册成功', 
-                data: { 
-                  token,
-                  userData
-                } 
-              })
+            const query1 = `insert into student_info(student_name, username, phone, student_id) values('${name}', '${username}', '${phone}', '${stu_id}')`;
+            querySql(query1)
+            .then(result1 => {
+              if (result1) {
+                res.json({ 
+                  code: CODE_SUCCESS, 
+                  msg: '注册成功', 
+                  data: null
+                })
+              }
             })
-		      }
+          }
 		    })
   		}
-  	})
-   
+    })
   }
 }
 
@@ -276,13 +398,13 @@ function resetPwd(req, res, next) {
 
     console.log(1);
     const resetTime = new Date().getTime()
-    // if (resetTime - time >= 5 *1000 * 60) {
-    //   res.json({
-    //       code: -1,
-    //       msg: '验证码已过期',
-    //       data: null
-    //   })
-    // }
+    if (resetTime - time >= 5 *1000 * 60) {
+      res.json({
+          code: -1,
+          msg: '验证码已过期',
+          data: null
+      })
+    }
     const query = `update user_info set password='${password}' where email='${email}'`
     querySql(query)
     .then(user => {
@@ -367,13 +489,15 @@ function validateUser(username, oldPassword) {
 }
 
 // 通过用户名查询用户信息
-function findUser(username) {
-  const query = `select id, username from sys_user where username='${username}'`;
+function findUser(username, phone, email) {
+  const query = `select phone, username, email from user_info where username='${username}' or phone='${phone}' or email='${email}'`;
   return queryOne(query);
 }
 
 module.exports = {
   login,
+  stuInfo,
+  deleteStu,
   info,
   email,
   register,

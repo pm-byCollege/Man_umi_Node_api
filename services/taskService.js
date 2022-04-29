@@ -134,7 +134,7 @@ function queryFirmList(req, res, next) {
     let query = `select * from firm_info`;
     querySql(query)
     .then(data => {
-    	console.log('所有单位===', data);
+    	// console.log('所有单位===', data);
       if (!data || data.length === 0) {
         res.json({ 
         	code: CODE_ERROR, 
@@ -145,8 +145,8 @@ function queryFirmList(req, res, next) {
         // 计算数据总条数
         let total = data.length; 
         // 分页条件 (跳过多少条)
-        let pageS = page - 1;
-        let n = page * pageSize;
+        let pageS = (page - 1) * pageSize;
+        let n = pageSize;
         // 拼接分页的sql语句命令
         if (region || name || classify) {
             let query_4;
@@ -189,7 +189,7 @@ function queryFirmList(req, res, next) {
             }
           })
         } else {
-          let query_3 = query + ` limit ${pageS} , ${n}`;
+          let query_3 = query + ` limit ${pageS}, ${n}`;
           querySql(query_3)
           .then(result_3 => {
             if (!result_3 || result_3.length === 0) {
@@ -205,7 +205,7 @@ function queryFirmList(req, res, next) {
                 data: result_3,
                 total: total,
                 page: page,
-                pageSize: pageSize,
+                pageSize: n,
               })
             }
           })
@@ -486,33 +486,68 @@ function upload(req, res, next) {
       if(err) next(err);
       console.log(files);
       const url = files.file.newFilename
-      // var url1 = ''
-      // for (let i = 0; i < url.length; i++) {
-      //   if (url[i] === '\\'){
-      //     url1 += '\\\\'
-      //   } else {
-      //     url1 += url[i]
-      //   }
-      // }
-      
-      const query = `update delivery_info set filepath='${url}' where stu_id='${Number(stu_id)}' and postId='${postId}' and firmId='${firmId}'`;
-      querySql(query)
-      .then(data => {
-        if (!data || data.length === 0) {
-          res.json({ 
-            code: CODE_ERROR, 
-            msg: '添加数据失败', 
-            data: null 
+      findDelivery({
+        stu_id,
+        firmId,
+        postId
+      }).then(task => {
+        if (task) {
+          // 以投递过
+          const query = `update delivery_info set filepath='${url}' where stu_id='${Number(stu_id)}' and postId='${postId}' and firmId='${firmId}'`;
+          querySql(query)
+          .then(data => {
+            if (!data || data.length === 0) {
+              res.json({ 
+                code: CODE_ERROR, 
+                msg: '添加数据失败', 
+                data: null 
+              })
+            } else {
+              res.send({
+                status: 200,
+                data: null,
+                msg: '上传成功'
+              })
+            }
           })
         } else {
-          res.send({
-            status: 200,
-            data: null,
-            msg: '上传成功'
+          const query1 = `select student_name from student_info where student_id='${stu_id}'`
+          querySql(query1)
+          .then(res1 => {
+            console.log(res1);
+            const query2 = `select postName from postlist where id='${postId}'`
+            querySql(query2)
+            .then(res2 => {
+              console.log(res2);
+              const query3 = `insert into delivery_info(stu_id, firmId, stu_name, post ,filepath, postId) values('${stu_id}', '${firmId}', '${res1[0].student_name}', '${res2[0].postName}', '${url}', '${postId}' )`
+              querySql(query3)
+              .then(res3 => {
+                if (!res3 || res3.length === 0) {
+                  res.json({ 
+                    code: CODE_ERROR, 
+                    msg: '失败', 
+                    data: null 
+                  })
+                } else {
+                  res.json({ 
+                    code: CODE_SUCCESS, 
+                    msg: '成功', 
+                    data: null 
+                  })
+                }
+              })
+            })
           })
         }
       })
+      
     })
+}
+
+function findDelivery(param) {
+  let query = null;
+    query = `select * from delivery_info where stu_id='${param.stu_id}' and firmId='${param.firmId}' and postId='${param.postId}'`;
+  return queryOne(query);
 }
 
 

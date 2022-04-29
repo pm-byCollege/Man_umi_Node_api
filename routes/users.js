@@ -41,16 +41,28 @@ const resetPwdVaildator = [
   body('oldPassword').isString().withMessage('密码类型错误'),
   body('newPassword').isString().withMessage('密码类型错误')
 ]
+
+const regisrerVaildator = [
+  body('username').isString().withMessage('用户名类型错误'),
+  body('password').isString().withMessage('密码类型错误'),
+  body('phone').isString().withMessage('密码类型错误'),
+  body('name').isString().withMessage('密码类型错误'),
+  body('email').isString().withMessage('密码类型错误')
+]
+
 // 用户登录路由
 router.post('/login', vaildator, service.login);
 
 // 用户注册路由
-router.post('/register', vaildator, service.register);
+router.post('/register', regisrerVaildator, service.register);
 
 router.post('/sendEmail', emailVaildator, service.email);
 
 router.post('/info', phoneVaildator, service.info )
 // router.post('/forget', forgetPwdVaildator, service.forgetPwd)
+router.post('/stuInfo', service.stuInfo);
+
+router.post('/deleteStu', service.deleteStu);
 
 // 密码重置路由
 router.post('/resetPwd', forgetPwdVaildator, service.resetPwd);
