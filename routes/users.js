@@ -61,7 +61,8 @@ router.post('/sendEmail', emailVaildator, service.email);
 router.post('/info', phoneVaildator, service.info )
 // router.post('/forget', forgetPwdVaildator, service.forgetPwd)
 router.post('/stuInfo', service.stuInfo);
-
+router.post('/teaInfo', service.teaInfo);
+router.post('/addTea', service.addTea);
 router.post('/deleteStu', service.deleteStu);
 
 // 密码重置路由

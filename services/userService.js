@@ -175,8 +175,8 @@ function stuInfo(req, res, next) {
         // 计算数据总条数
         let total = data.length; 
         // 分页条件 (跳过多少条)
-        let pageS = page - 1;
-        let n = page * pageSize;
+        let pageS = (page - 1) * pageSize;
+        let n =  pageSize;
         // 拼接分页的sql语句命令
         if (student_id) {
           let query_1 = `select * from student_info where student_id='${student_id}'`;
@@ -283,6 +283,152 @@ function deleteStu(req, res, next) {
           })
         }
   }
+}
+
+function teaInfo(req, res, next) {
+  const err = validationResult(req);
+  // 如果验证错误，empty不为空
+  if (!err.isEmpty()) {
+    // 获取错误信息
+    const [{ msg }] = err.errors;
+    // 抛出错误，交给我们自定义的统一异常处理程序进行错误返回 
+    next(boom.badRequest(msg));
+  } else {
+    let { pageSize, page, tea_id } = req.body;
+    let query = `select * from teacher_info`;
+    querySql(query)
+    .then(data => {
+    	console.log('所有老师===', data);
+      if (!data || data.length === 0) {
+        res.json({ 
+        	code: CODE_ERROR, 
+        	msg: '暂无数据', 
+        	data: null 
+        })
+      } else {
+        // 计算数据总条数
+        let total = data.length; 
+        // 分页条件 (跳过多少条)
+        let pageS = (page - 1) * pageSize;
+        let n =  pageSize;
+        // 拼接分页的sql语句命令
+        if (tea_id) {
+          let query_1 = `select * from teacher_info where tea_id='${tea_id}'`;
+          querySql(query_1)
+          .then(result_1 => {
+            if (!result_1 || result_1.length === 0) {
+              res.json({ 
+                code: CODE_SUCCESS, 
+                msg: '暂无数据', 
+                data: [] 
+              })
+            } else {
+              let query_2 = query_1 + ` limit ${pageS} , ${n}`;
+              querySql(query_2)
+              .then(result_2 => {
+                if (!result_2 || result_2.length === 0) {
+                  res.json({ 
+                    code: CODE_SUCCESS, 
+                    msg: '暂无数据', 
+                    data: [] 
+                  })
+                } else {
+                  res.json({ 
+                    code: CODE_SUCCESS, 
+                    msg: '查询数据成功', 
+                    data:result_2,
+                    total: result_1.length,
+                    page: page,
+                    pageSize: pageSize,
+                  })
+                }
+              })
+            }
+          })
+        } else {
+          let query_3 = query + ` limit ${pageS} , ${n}`;
+          querySql(query_3)
+          .then(result_3 => {
+            if (!result_3 || result_3.length === 0) {
+              res.json({ 
+                code: CODE_SUCCESS, 
+                msg: '暂无数据', 
+                data: [] 
+              })
+            } else {
+              res.json({ 
+                code: CODE_SUCCESS, 
+                msg: '查询数据成功', 
+                data: result_3,
+                total: total,
+                page: page,
+                pageSize: pageSize,
+              })
+            }
+          })
+        }
+      }
+    })
+  }
+}
+
+function addTea(req, res, next) {
+  const err = validationResult(req);
+  if (!err.isEmpty()) {
+    const [{ msg }] = err.errors;
+    next(boom.badRequest(msg));
+  } else {
+    let { username, password, phone, tea_id, name, email } = req.body;
+    tea_id = Number(tea_id)
+    let type = 2
+    findTea(username, phone)
+  	.then(data => {
+  		console.log('用户注册===', data);
+  		if (data) {
+        let errMsg = '';
+        if (phone === data.phone) errMsg = '电话已存在'
+        if (tea_id === data.tea_id) errMsg = '工号已存在'
+        if (username === data.username) errMsg = '用户名已存在'
+  			res.json({ 
+	      	code: CODE_ERROR, 
+	      	msg: errMsg,
+	      	data: null 
+	      })
+  		} else {
+	    	// password = md5(password);
+  			const query = `insert into user_info(username, password, name, phone, email, type) values('${username}', '${password}', '${name}', '${phone}',  '${email}', '${type}')`;
+  			querySql(query)
+		    .then(result => {
+		    	// console.log('用户注册===', result);
+		      if (!result || result.length === 0) {
+		        res.json({ 
+		        	code: CODE_ERROR, 
+		        	msg: '注册失败', 
+		        	data: null 
+		        })
+		      } else {
+            const query1 = `insert into teacher_info(name, username, phone, tea_id, email) values('${name}', '${username}', '${phone}', '${tea_id}', '${email}')`;
+            querySql(query1)
+            .then(result1 => {
+              if (result1) {
+                res.json({ 
+                  code: CODE_SUCCESS, 
+                  msg: '添加注册成功', 
+                  data: null
+                })
+              }
+            })
+          }
+		    })
+  		}
+    })
+  }
+}
+
+function findTea(username, phone) {
+  let query = null;
+  query = `select * from user_info where username='${username}' or phone='${phone}'`;
+  return queryOne(query);
 }
 
 // 注册
@@ -497,6 +643,8 @@ function findUser(username, phone, email) {
 module.exports = {
   login,
   stuInfo,
+  teaInfo,
+  addTea,
   deleteStu,
   info,
   email,
