@@ -11,7 +11,7 @@ const { route } = require('./users');
 
 
 // 任务清单接口
-router.get('/queryTaskList', service.queryTaskList);
+// router.get('/queryTaskList', service.queryTaskList);
 
 router.post('/queryFirmList', service.queryFirmList);
 router.post('/addFirm', service.addFirm);
@@ -22,22 +22,23 @@ router.post('/getDeliveryInfo', service.getDeliveryInfo);
 router.post('/upload', service.upload);
 router.get('/down', service.down);
 
+router.post('/queryDeliveryList', service.queryDeliveryList);
 router.post('/queryPostList', service.queryPostList)
 
-// 添加任务接口
-router.post('/addTask', service.addTask);
+// // 添加任务接口
+// router.post('/addTask', service.addTask);
 
-// 编辑任务接口
-router.put('/editTask', service.editTask);
+// // 编辑任务接口
+// router.put('/editTask', service.editTask);
 
-// 操作任务状态接口
-router.put('/updateTaskStatus', service.updateTaskStatus);
+// // 操作任务状态接口
+// router.put('/updateTaskStatus', service.updateTaskStatus);
 
-// 点亮红星标记接口
-router.put('/updateMark', service.updateMark);
+// // 点亮红星标记接口
+// router.put('/updateMark', service.updateMark);
 
-// 删除任务接口
-router.delete('/deleteTask', service.deleteTask);
+// // 删除任务接口
+// router.delete('/deleteTask', service.deleteTask);
 
 
 module.exports = router;

@@ -285,6 +285,53 @@ function deleteStu(req, res, next) {
   }
 }
 
+function deleteTea(req, res, next) {
+  const err = validationResult(req);
+  if (!err.isEmpty()) {
+    const [{ msg }] = err.errors;
+    next(boom.badRequest(msg));
+  } else {
+    let { tea_id, phone, type } = req.body;
+        if (type === 3) {
+          res.json({ 
+            code: CODE_ERROR, 
+            msg: '删除数据失败，目前无权限', 
+            data: null 
+          })
+        } else {
+          const query = `delete from teacher_info where tea_id='${tea_id}'`;
+          querySql(query)
+          .then(data => {
+            if (!data || data.length === 0) {
+              res.json({ 
+                code: CODE_ERROR, 
+                msg: '删除数据失败', 
+                data: null 
+              })
+            } else {
+              const query2 = `delete from user_info where phone='${phone}'`;
+              querySql(query2)
+              .then(data1 => {
+                if (!data1 || data1.length === 0) {
+                  res.json({ 
+                    code: CODE_ERROR, 
+                    msg: '删除数据失败', 
+                    data: null 
+                  })
+                } else {
+                  res.json({ 
+                    code: CODE_SUCCESS, 
+                    msg: '删除数据成功', 
+                    data: null 
+                  })
+                }
+              })
+            }
+          })
+        }
+  }
+}
+
 function teaInfo(req, res, next) {
   const err = validationResult(req);
   // 如果验证错误，empty不为空
@@ -496,6 +543,7 @@ async function email(req, res, next) {
   };
   nodemailer(mail)
   // INITCODE[req.body.email] = code
+
   INITCODE = code
   res.send({
     code: 0,
@@ -541,8 +589,13 @@ function resetPwd(req, res, next) {
     //     })
     //   }
     // }
-
-    console.log(1);
+    if (INITCODE !== code) {
+      res.json({
+        code: -1,
+        msg: '验证码不正确',
+        data: null
+    })
+    }
     const resetTime = new Date().getTime()
     if (resetTime - time >= 5 *1000 * 60) {
       res.json({
@@ -646,6 +699,7 @@ module.exports = {
   teaInfo,
   addTea,
   deleteStu,
+  deleteTea,
   info,
   email,
   register,

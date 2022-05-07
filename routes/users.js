@@ -64,6 +64,7 @@ router.post('/stuInfo', service.stuInfo);
 router.post('/teaInfo', service.teaInfo);
 router.post('/addTea', service.addTea);
 router.post('/deleteStu', service.deleteStu);
+router.post('/deleteTea', service.deleteTea);
 
 // 密码重置路由
 router.post('/resetPwd', forgetPwdVaildator, service.resetPwd);
